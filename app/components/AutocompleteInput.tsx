@@ -51,9 +51,15 @@ export default function AutocompleteInput({
                     const data = await response.json();
                     setSuggestions(data.data || []);
                     setShowSuggestions(true);
+                } else {
+                    console.error('Airport search failed:', response.status);
+                    setSuggestions([]);
+                    setShowSuggestions(false);
                 }
             } catch (error) {
                 console.error('Airport search error:', error);
+                setSuggestions([]);
+                setShowSuggestions(false);
             } finally {
                 setLoading(false);
             }
@@ -94,22 +100,28 @@ export default function AutocompleteInput({
 
     return (
         <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-            <input
-                ref={inputRef}
-                type="text"
-                name={name}
-                onChange={handleInputChange}
-                placeholder={placeholder}
-                className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required={required}
-                autoComplete="off"
-            />
+            <label className="block text-sm font-semibold text-gray-700 mb-2">{label}</label>
+            <div className="relative">
+                <input
+                    ref={inputRef}
+                    type="text"
+                    name={name}
+                    onChange={handleInputChange}
+                    placeholder={placeholder}
+                    className="w-full px-4 py-3 pl-12 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white"
+                    required={required}
+                    autoComplete="off"
+                />
+                <svg className="absolute left-3 top-3 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+            </div>
 
             {showSuggestions && (
                 <div
                     ref={suggestionsRef}
-                    className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto"
+                    className="absolute z-20 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-2xl max-h-60 overflow-y-auto backdrop-blur-sm"
                 >
                     {loading && (
                         <div className="px-3 py-2 text-gray-500 text-sm">
@@ -127,13 +139,23 @@ export default function AutocompleteInput({
                         <div
                             key={airport.id}
                             onClick={() => handleSuggestionClick(airport)}
-                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                            className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-150"
                         >
-                            <div className="font-medium text-gray-900">
-                                {airport.name} ({airport.iataCode})
-                            </div>
-                            <div className="text-sm text-gray-500">
-                                {airport.address.cityName}, {airport.address.countryName}
+                            <div className="flex items-center space-x-3">
+                                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                                    </svg>
+                                </div>
+                                <div className="flex-1">
+                                    <div className="font-semibold text-gray-900">
+                                        {airport.name}
+                                    </div>
+                                    <div className="text-sm text-gray-500 flex items-center space-x-2">
+                                        <span>{airport.address.cityName}, {airport.address.countryName}</span>
+                                        <span className="px-2 py-1 bg-gray-100 rounded-md text-xs font-medium">{airport.iataCode}</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     ))}

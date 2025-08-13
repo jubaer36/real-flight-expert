@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getAmadeusToken } from '../../lib/amadeus';
 
 interface FlightSearchParams {
     origin: string;
@@ -12,35 +13,31 @@ export async function POST(request: NextRequest) {
     try {
         const { origin, destination, departureDate, returnDate, passengers }: FlightSearchParams = await request.json();
 
-        // Get access token from Amadeus
-        const tokenResponse = await fetch('https://test.api.amadeus.com/v1/security/oauth2/token', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-                grant_type: 'client_credentials',
-                client_id: process.env.AMADEUS_API_KEY!,
-                client_secret: process.env.AMADEUS_API_SECRET!,
-            }),
-        });
+        // Get access token from shared service
+        const accessToken = await getAmadeusToken();
 
-        if (!tokenResponse.ok) {
-            throw new Error('Failed to get access token');
+        // Validate input parameters
+        if (!origin || !destination || !departureDate) {
+            return NextResponse.json(
+                { error: 'Missing required parameters' },
+                { status: 400 }
+            );
         }
 
-        const tokenData = await tokenResponse.json();
-        const accessToken = tokenData.access_token;
-
-        // Search for flights
+        // Search for flights using correct parameters
         const flightSearchUrl = new URL('https://test.api.amadeus.com/v2/shopping/flight-offers');
-        flightSearchUrl.searchParams.append('originLocationCode', origin);
-        flightSearchUrl.searchParams.append('destinationLocationCode', destination);
+        flightSearchUrl.searchParams.append('originLocationCode', origin.toUpperCase());
+        flightSearchUrl.searchParams.append('destinationLocationCode', destination.toUpperCase());
         flightSearchUrl.searchParams.append('departureDate', departureDate);
         if (returnDate) {
             flightSearchUrl.searchParams.append('returnDate', returnDate);
         }
         flightSearchUrl.searchParams.append('adults', passengers.toString());
+        flightSearchUrl.searchParams.append('children', '0');
+        flightSearchUrl.searchParams.append('infants', '0');
+        flightSearchUrl.searchParams.append('travelClass', 'ECONOMY');
+        flightSearchUrl.searchParams.append('nonStop', 'false');
+        flightSearchUrl.searchParams.append('currencyCode', 'USD');
         flightSearchUrl.searchParams.append('max', '10');
 
         const flightResponse = await fetch(flightSearchUrl.toString(), {
@@ -50,11 +47,27 @@ export async function POST(request: NextRequest) {
         });
 
         if (!flightResponse.ok) {
-            throw new Error('Failed to search flights');
+            const errorText = await flightResponse.text();
+            console.error('Flight API error:', flightResponse.status, errorText);
+
+            if (flightResponse.status === 400) {
+                return NextResponse.json(
+                    { error: 'Invalid search parameters. Please check your airport codes and dates.' },
+                    { status: 400 }
+                );
+            }
+
+            throw new Error(`Flight API returned ${flightResponse.status}`);
         }
 
         const flightData = await flightResponse.json();
-        return NextResponse.json(flightData);
+
+        // Ensure we return data in expected format
+        return NextResponse.json({
+            data: flightData.data || [],
+            meta: flightData.meta || {},
+            dictionaries: flightData.dictionaries || {}
+        });
 
     } catch (error) {
         console.error('Flight search error:', error);
