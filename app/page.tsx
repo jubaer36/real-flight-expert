@@ -35,16 +35,22 @@ export default function FlightSearch() {
     returnDate: '',
     passengers: 1
   });
-  
+
   const [tripType, setTripType] = useState('roundtrip');
-  
+  const [travelClass, setTravelClass] = useState('economy');
+  const [passengerBreakdown, setPassengerBreakdown] = useState({
+    adults: 1,
+    children: 0,
+    infants: 0
+  });
+
   const [flights, setFlights] = useState<FlightOffer[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [bookedFlight, setBookedFlight] = useState<FlightOffer | null>(null);
   const [bookingLoading, setBookingLoading] = useState<string | null>(null);
   const [showPassengerDropdown, setShowPassengerDropdown] = useState(false);
-  
+
   const passengerDropdownRef = useRef<HTMLDivElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -101,7 +107,7 @@ export default function FlightSearch() {
   const formatDuration = (duration: string) => {
     const match = duration.match(/PT(\d+H)?(\d+M)?/);
     if (!match) return duration;
-    
+
     const hours = match[1] ? match[1].replace('H', 'h ') : '';
     const minutes = match[2] ? match[2].replace('M', 'm') : '';
     return `${hours}${minutes}`;
@@ -109,7 +115,7 @@ export default function FlightSearch() {
 
   const handleBookFlight = async (flight: FlightOffer) => {
     setBookingLoading(flight.id);
-    
+
     // Simulate booking process
     setTimeout(() => {
       setBookedFlight(flight);
@@ -127,7 +133,19 @@ export default function FlightSearch() {
       returnDate: '',
       passengers: 1
     });
+    setTravelClass('economy');
+    setPassengerBreakdown({
+      adults: 1,
+      children: 0,
+      infants: 0
+    });
   };
+
+  // Sync passenger breakdown with search data
+  useEffect(() => {
+    const totalPassengers = passengerBreakdown.adults + passengerBreakdown.children + passengerBreakdown.infants;
+    setSearchData(prev => ({ ...prev, passengers: totalPassengers }));
+  }, [passengerBreakdown]);
 
   // Close passenger dropdown when clicking outside
   useEffect(() => {
@@ -161,16 +179,16 @@ export default function FlightSearch() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-100 px-4 py-4">
+      <header className="bg-white shadow-sm border-b border-gray-100 px-4 py-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              FlightSearch
+          <div className="flex items-center space-x-4">
+            <img
+              src="/realflightexpertlogo.png"
+              alt="Real Flight Expert Logo"
+              className="w-12 h-12 object-contain"
+            />
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              Real Flight Expert
             </h1>
           </div>
           <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600">
@@ -182,68 +200,224 @@ export default function FlightSearch() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-700 px-4 py-12 sm:py-16">
-        <div className="absolute inset-0 bg-black opacity-20"></div>
-        <div className="relative max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-            Find Your Perfect Flight
-          </h2>
-          <p className="text-xl text-blue-100 mb-8">
-            Search and compare flights from airlines worldwide
-          </p>
-          <div className="w-24 h-1 bg-white mx-auto rounded-full"></div>
-        </div>
-        {/* Decorative elements */}
-        <div className="absolute top-10 left-10 w-20 h-20 border border-white opacity-10 rounded-full"></div>
-        <div className="absolute bottom-10 right-10 w-32 h-32 border border-white opacity-10 rounded-full"></div>
-        <div className="absolute top-1/2 left-1/4 w-2 h-2 bg-white opacity-30 rounded-full"></div>
-        <div className="absolute top-1/3 right-1/3 w-1 h-1 bg-white opacity-40 rounded-full"></div>
-      </div>
-
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 py-8 -mt-8 relative z-10">
+      <main className="max-w-4xl mx-auto px-4 py-8">
         {/* Search Form */}
         <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 sm:p-8 mb-8 backdrop-blur-sm">
           <form onSubmit={handleSearch} className="space-y-4">
-            {/* Trip Type */}
-            <div className="flex gap-2 mb-8">
-              <label className={`flex-1 flex items-center justify-center p-3 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-                tripType === 'roundtrip' 
-                  ? 'border-blue-500 bg-blue-50 text-blue-700' 
-                  : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300'
-              }`}>
-                <input 
-                  type="radio" 
-                  name="tripType" 
-                  value="roundtrip" 
-                  checked={tripType === 'roundtrip'}
-                  onChange={(e) => setTripType(e.target.value)}
-                  className="sr-only" 
-                />
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                </svg>
-                Round trip
-              </label>
-              <label className={`flex-1 flex items-center justify-center p-3 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
-                tripType === 'oneway' 
-                  ? 'border-blue-500 bg-blue-50 text-blue-700' 
-                  : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300'
-              }`}>
-                <input 
-                  type="radio" 
-                  name="tripType" 
-                  value="oneway" 
-                  checked={tripType === 'oneway'}
-                  onChange={(e) => setTripType(e.target.value)}
-                  className="sr-only" 
-                />
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </svg>
-                One way
-              </label>
+            {/* Trip Type, Class, and Passengers */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+              {/* Trip Type Dropdown */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Trip Type</label>
+                <div className="relative">
+                  <select
+                    value={tripType}
+                    onChange={(e) => setTripType(e.target.value)}
+                    className="w-full px-4 py-4 pr-12 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white text-base appearance-none"
+                  >
+                    <option value="roundtrip">Round trip</option>
+                    <option value="oneway">One way</option>
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Class Dropdown */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Class</label>
+                <div className="relative">
+                  <select
+                    value={travelClass}
+                    onChange={(e) => setTravelClass(e.target.value)}
+                    className="w-full px-4 py-4 pr-12 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white text-base appearance-none"
+                  >
+                    <option value="economy">Economy</option>
+                    <option value="premium_economy">Premium Economy</option>
+                    <option value="business">Business</option>
+                    <option value="first">First</option>
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Passengers */}
+              <div className="relative" ref={passengerDropdownRef}>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Passengers</label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setShowPassengerDropdown(!showPassengerDropdown)}
+                    className={`w-full bg-gray-50 border-2 border-gray-200 rounded-xl transition-all duration-200 h-[56px] flex items-center px-4 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center space-x-3">
+                        <span className="text-gray-700 font-medium text-sm">
+                          {passengerBreakdown.adults + passengerBreakdown.children + passengerBreakdown.infants} passenger{(passengerBreakdown.adults + passengerBreakdown.children + passengerBreakdown.infants) > 1 ? 's' : ''}
+                        </span>
+                      </div>
+                      <svg
+                        className={`w-5 h-5 text-gray-400 transition-transform duration-200 `}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </button>
+
+                  {/* Passenger Dropdown */}
+                  {showPassengerDropdown && (
+                    <div className="absolute z-20 w-full mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-2xl backdrop-blur-sm">
+                      <div className="p-4 space-y-4">
+                        {/* Adults */}
+                        <div className="flex items-center justify-between py-2">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+                              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                              </svg>
+                            </div>
+                            <div>
+                              <div className="font-medium text-gray-900 text-sm">Adults</div>
+                              <div className="text-xs text-gray-500">Age 12+</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              type="button"
+                              onClick={() => setPassengerBreakdown(prev => ({ ...prev, adults: Math.max(1, prev.adults - 1) }))}
+                              disabled={passengerBreakdown.adults <= 1}
+                              className="w-7 h-7 rounded-full bg-gray-100 border border-gray-300 disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex items-center justify-center focus:outline-none"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                              </svg>
+                            </button>
+                            <span className="w-6 text-center font-medium text-gray-900">
+                              {passengerBreakdown.adults}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setPassengerBreakdown(prev => ({ ...prev, adults: Math.min(9, prev.adults + 1) }))}
+                              disabled={passengerBreakdown.adults >= 9}
+                              className="w-7 h-7 rounded-full bg-gray-100 border border-gray-300 disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex items-center justify-center focus:outline-none"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Children */}
+                        <div className="flex items-center justify-between py-2">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
+                              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.5a1.5 1.5 0 011.5 1.5V12a1.5 1.5 0 01-1.5 1.5H9m0-4.5V9a1.5 1.5 0 011.5-1.5H12a1.5 1.5 0 011.5 1.5v1.5m-6 0V12a1.5 1.5 0 001.5 1.5H9" />
+                              </svg>
+                            </div>
+                            <div>
+                              <div className="font-medium text-gray-900 text-sm">Children</div>
+                              <div className="text-xs text-gray-500">Age 2-11</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              type="button"
+                              onClick={() => setPassengerBreakdown(prev => ({ ...prev, children: Math.max(0, prev.children - 1) }))}
+                              disabled={passengerBreakdown.children <= 0}
+                              className="w-7 h-7 rounded-full bg-gray-100 border border-gray-300 disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex items-center justify-center focus:outline-none"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                              </svg>
+                            </button>
+                            <span className="w-6 text-center font-medium text-gray-900">
+                              {passengerBreakdown.children}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setPassengerBreakdown(prev => ({ ...prev, children: Math.min(8, prev.children + 1) }))}
+                              disabled={passengerBreakdown.children >= 8}
+                              className="w-7 h-7 rounded-full bg-gray-100 border border-gray-300 disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex items-center justify-center focus:outline-none"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Infants */}
+                        <div className="flex items-center justify-between py-2">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-gradient-to-r from-pink-500 to-rose-600 rounded-full flex items-center justify-center">
+                              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                              </svg>
+                            </div>
+                            <div>
+                              <div className="font-medium text-gray-900 text-sm">Infants</div>
+                              <div className="text-xs text-gray-500">Under 2</div>
+                            </div>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              type="button"
+                              onClick={() => setPassengerBreakdown(prev => ({ ...prev, infants: Math.max(0, prev.infants - 1) }))}
+                              disabled={passengerBreakdown.infants <= 0}
+                              className="w-7 h-7 rounded-full bg-gray-100 border border-gray-300 disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex items-center justify-center focus:outline-none"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                              </svg>
+                            </button>
+                            <span className="w-6 text-center font-medium text-gray-900">
+                              {passengerBreakdown.infants}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setPassengerBreakdown(prev => ({ ...prev, infants: Math.min(passengerBreakdown.adults, prev.infants + 1) }))}
+                              disabled={passengerBreakdown.infants >= passengerBreakdown.adults}
+                              className="w-7 h-7 rounded-full bg-gray-100 border border-gray-300 disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex items-center justify-center focus:outline-none"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="border-t border-gray-100 pt-3 mt-3">
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm text-gray-600">
+                              Total: {passengerBreakdown.adults + passengerBreakdown.children + passengerBreakdown.infants} passenger{(passengerBreakdown.adults + passengerBreakdown.children + passengerBreakdown.infants) > 1 ? 's' : ''}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setShowPassengerDropdown(false)}
+                              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300"
+                            >
+                              Done
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             {/* Search Fields */}
@@ -278,7 +452,7 @@ export default function FlightSearch() {
                     value={searchData.departureDate}
                     onChange={handleInputChange}
                     min={new Date().toISOString().split('T')[0]}
-                    className="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white"
+                    className="w-full px-4 py-4 pr-12 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white text-base"
                     required
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
@@ -300,7 +474,7 @@ export default function FlightSearch() {
                       value={searchData.returnDate}
                       onChange={handleInputChange}
                       min={searchData.departureDate || new Date().toISOString().split('T')[0]}
-                      className="w-full px-4 py-3 pr-12 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white"
+                      className="w-full px-4 py-4 pr-12 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50 focus:bg-white text-base"
                       required={tripType === 'roundtrip'}
                     />
                     <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
@@ -312,97 +486,7 @@ export default function FlightSearch() {
                 </div>
               )}
 
-              {/* Passengers */}
-              <div className="relative" ref={passengerDropdownRef}>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Passengers</label>
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setShowPassengerDropdown(!showPassengerDropdown)}
-                    className={`w-full bg-gray-50 border-2 border-gray-200 rounded-xl transition-all duration-200 h-[52px] flex items-center px-4 hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500`}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <div className="flex items-center space-x-3">
-                        {/* <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg> */}
-                        <span className="text-gray-700 font-medium text-sm">
-                          {searchData.passengers} passenger{searchData.passengers > 1 ? 's' : ''}
-                        </span>
-                      </div>
-                      <svg 
-                        className={`w-5 h-5 text-gray-400 transition-transform duration-200 `} 
-                        fill="none" 
-                        stroke="currentColor" 
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  </button>
 
-                  {/* Passenger Dropdown */}
-                  {showPassengerDropdown && (
-                    <div className="absolute z-20 w-full mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-2xl backdrop-blur-sm">
-                      <div className="p-4">
-                        <div className="flex items-center justify-between py-3">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-                              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                              </svg>
-                            </div>
-                            <div>
-                              <div className="font-semibold text-gray-900">Adults</div>
-                              <div className="text-sm text-gray-500">Age 12+</div>
-                            </div>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            <button
-                              type="button"
-                              onClick={() => setSearchData(prev => ({ ...prev, passengers: Math.max(1, prev.passengers - 1) }))}
-                              disabled={searchData.passengers <= 1}
-                              className="w-8 h-8 rounded-full bg-gray-100 border-2 border-gray-300 disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-300"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                              </svg>
-                            </button>
-                            <span className="w-8 text-center font-bold text-lg text-gray-900">
-                              {searchData.passengers}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => setSearchData(prev => ({ ...prev, passengers: Math.min(9, prev.passengers + 1) }))}
-                              disabled={searchData.passengers >= 9}
-                              className="w-8 h-8 rounded-full bg-gray-100 border-2 border-gray-300 disabled:border-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-600 hover:border-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-300"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
-                        
-                        <div className="border-t border-gray-100 pt-3 mt-3">
-                          <div className="flex items-center justify-between">
-                            <div className="text-sm text-gray-600">
-                              Total: {searchData.passengers} passenger{searchData.passengers > 1 ? 's' : ''}
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => setShowPassengerDropdown(false)}
-                              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300"
-                            >
-                              Done
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
 
             {/* Search Button */}
@@ -445,8 +529,8 @@ export default function FlightSearch() {
             <p className="text-gray-600">Finding the best deals for your journey</p>
             <div className="mt-6 flex justify-center space-x-1">
               <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce"></div>
-              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
-              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
             </div>
           </div>
         )}
@@ -484,7 +568,7 @@ export default function FlightSearch() {
                     {flight.itineraries[0].segments.map((segment, segmentIndex) => {
                       const departure = formatDateTime(segment.departure.at);
                       const arrival = formatDateTime(segment.arrival.at);
-                      
+
                       return (
                         <div key={segmentIndex} className="flex items-center justify-between py-4 border-b border-gray-100 last:border-b-0">
                           <div className="flex items-center space-x-6 flex-1">
@@ -492,7 +576,7 @@ export default function FlightSearch() {
                             <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
                               <span className="text-white font-bold text-sm">{segment.carrierCode}</span>
                             </div>
-                            
+
                             {/* Flight Details */}
                             <div className="flex items-center space-x-8 flex-1">
                               <div className="text-center">
@@ -500,17 +584,18 @@ export default function FlightSearch() {
                                 <div className="text-sm text-gray-500">{departure.date}</div>
                                 <div className="text-sm font-semibold text-blue-600">{segment.departure.iataCode}</div>
                               </div>
-                              
+
+
                               <div className="flex flex-col items-center px-4 flex-1">
                                 <div className="text-xs text-gray-500 mb-1">{segment.carrierCode} {segment.number}</div>
                                 <div className="w-full h-0.5 bg-gradient-to-r from-blue-500 to-indigo-600 relative">
                                   <svg className="absolute -right-1 -top-2 w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                                   </svg>
                                 </div>
                                 <div className="text-xs text-gray-500 mt-1">{formatDuration(segment.duration)}</div>
                               </div>
-                              
+
                               <div className="text-center">
                                 <div className="text-xl font-bold text-gray-900">{arrival.time}</div>
                                 <div className="text-sm text-gray-500">{arrival.date}</div>
@@ -533,13 +618,13 @@ export default function FlightSearch() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="mt-6 lg:mt-0 lg:ml-8 text-center lg:text-right">
                     <div className="text-3xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">
                       {flight.price.currency} {flight.price.total}
                     </div>
                     <div className="text-sm text-gray-500 mb-4">per person</div>
-                    <button 
+                    <button
                       onClick={() => handleBookFlight(flight)}
                       disabled={bookingLoading === flight.id}
                       className="w-full lg:w-auto bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:from-gray-400 disabled:to-gray-500 text-white font-bold py-3 px-8 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-lg disabled:transform-none disabled:shadow-none flex items-center justify-center space-x-2"
@@ -579,14 +664,14 @@ export default function FlightSearch() {
                 <p className="text-green-700">Your booking confirmation number is: <span className="font-mono font-bold">FL{bookedFlight.id.slice(-6).toUpperCase()}</span></p>
               </div>
             </div>
-            
+
             <div className="bg-white rounded-lg border border-green-200 p-4 mb-4">
               <h4 className="font-semibold text-gray-900 mb-3">Flight Details</h4>
-              
+
               {bookedFlight.itineraries[0].segments.map((segment, index) => {
                 const departure = formatDateTime(segment.departure.at);
                 const arrival = formatDateTime(segment.arrival.at);
-                
+
                 return (
                   <div key={index} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
                     <div className="flex items-center space-x-4">
@@ -595,7 +680,7 @@ export default function FlightSearch() {
                         <div className="text-sm text-gray-500">{departure.date}</div>
                         <div className="text-sm font-medium text-gray-700">{segment.departure.iataCode}</div>
                       </div>
-                      
+
                       <div className="flex flex-col items-center px-4">
                         <div className="text-xs text-gray-500 mb-1">{segment.carrierCode} {segment.number}</div>
                         <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -603,7 +688,7 @@ export default function FlightSearch() {
                         </svg>
                         <div className="text-xs text-gray-500 mt-1">{formatDuration(segment.duration)}</div>
                       </div>
-                      
+
                       <div className="text-center">
                         <div className="font-medium text-gray-900">{arrival.time}</div>
                         <div className="text-sm text-gray-500">{arrival.date}</div>
@@ -613,7 +698,7 @@ export default function FlightSearch() {
                   </div>
                 );
               })}
-              
+
               <div className="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
                 <div>
                   <div className="text-sm text-gray-600">Total Duration</div>
@@ -627,7 +712,7 @@ export default function FlightSearch() {
                 </div>
               </div>
             </div>
-            
+
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={handleNewSearch}
@@ -651,7 +736,7 @@ export default function FlightSearch() {
                 </svg>
               </div>
               <div className="absolute -top-2 -right-2 w-6 h-6 bg-yellow-400 rounded-full animate-pulse"></div>
-              <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-green-400 rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
+              <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-green-400 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-4">Ready to explore the world?</h3>
             <p className="text-gray-600 mb-6 max-w-md mx-auto">
