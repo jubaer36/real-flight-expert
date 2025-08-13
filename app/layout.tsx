@@ -13,7 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Real Flight Expert",
+  title: "Flight Search - Find the Best Flight Deals",
+  description: "Search and compare flights from multiple airlines. Find the best deals on flights worldwide.",
 };
 
 export default function RootLayout({
